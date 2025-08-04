@@ -29,6 +29,10 @@ import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -39,31 +43,31 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.client.RestTemplate;
 
 @Controller
 @RequestMapping("/Presentacion")
 public class PresentacionController {
 
-//  
-//
-//    @GetMapping
-//    public String Index(Model model) {
-//        Result result = iUsuarioJPADAOImplementation.GetAll();
-//        //Result resultRol = usuarioDAOImplementation.GetAllRol();
-//        model.addAttribute("usuarioDireccion", result.objects);
-//        //model.addAttribute("roles", resultRol.objects);
-//        model.addAttribute("busquedaAbierta", new Usuario());
-////        if (result.correct) {
-////
-////        }
-//        return "Presentacion";
-//
-//    }
-//    
-//    @GetMapping("/Login")
-//    public String GetLogin(){
-//        return "Login";
-//    }
+    @GetMapping
+    public String Index(Model model) {
+     RestTemplate restTemplate = new RestTemplate();
+        ResponseEntity<Result<UsuarioDireccion>> response = restTemplate.exchange("http://localhost:8080/demoapi",
+                HttpMethod.GET,
+                HttpEntity.EMPTY,
+                new ParameterizedTypeReference<Result<UsuarioDireccion>>() {
+        });
+
+        List<UsuarioDireccion> usuariosDireccion = response.getBody().objects;
+        model.addAttribute("usuarioDireccion", usuariosDireccion);
+
+        return "Presentacion";
+    }
+    
+    @GetMapping("/Login")
+    public String GetLogin(){
+        return "Login";
+    }
 //
 //    @GetMapping("UsuarioForm/{idAlumno}") // este prepara la vista de formualrio
 //    public String Accion(Model model, @PathVariable int idAlumno) {

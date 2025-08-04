@@ -1,6 +1,5 @@
 package com.risosu.EDesalesProgramacionNCapasJunio3.Security;
 
-import javax.sql.DataSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -8,7 +7,6 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 
 @EnableWebSecurity
@@ -45,15 +43,12 @@ public class Security {
         return PasswordEncoderFactories.createDelegatingPasswordEncoder();
     }
 
-    @Bean
-    public UserDetailsService userDetailsService(DataSource datasource) {
-
-        JdbcUserDetailsManager CustoUserManager = new JdbcUserDetailsManager(datasource);
-        CustoUserManager.setUsersByUsernameQuery("select username, password, Roll.idRoll from usuario inner join Roll on usuario.idroll = Roll.idRoll where username = ? ");
-        CustoUserManager.setAuthoritiesByUsernameQuery("SELECT usuario.username, roll.nombre AS authority FROM usuario usuario JOIN Roll roll ON usuario.idroll = roll.idRoll WHERE usuario.username = ? ");
-
-        return CustoUserManager;
-    }
+//    @Bean
+//    public UserDetailsService userDetailsService(DataSource datasource) {
+//
+//
+//        return CustoUserManager;
+//    }
 
 //    @Bean
 //    public InMemoryUserDetailsManager inMemoryUserDetailsManager() {
