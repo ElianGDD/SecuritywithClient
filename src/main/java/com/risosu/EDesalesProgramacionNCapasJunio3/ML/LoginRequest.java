@@ -4,20 +4,30 @@
  */
 package com.risosu.EDesalesProgramacionNCapasJunio3.ML;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  *
  * @author Alien 13
  */
 public class LoginRequest {
-    String userName;
-    String password;
-    
-    public LoginRequest(String userName, String password){
-        this.password = password;
-        this.userName = userName;
-        
+
+    @JsonProperty("userName")
+    private String userName;
+     @JsonProperty("password")
+    private String password;
+
+    // Constructor vacío
+    public LoginRequest() {
     }
 
+    // Constructor con parámetros
+    public LoginRequest(String userName, String password) {
+        this.userName = userName;
+        this.password = password;
+    }
+
+    // Getters y setters
     public String getUserName() {
         return userName;
     }
@@ -33,6 +43,4 @@ public class LoginRequest {
     public void setPassword(String password) {
         this.password = password;
     }
-    
-    
 }

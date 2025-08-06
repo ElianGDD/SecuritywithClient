@@ -50,15 +50,16 @@ public class PresentacionController {
     }
 
     @GetMapping("/login")
-    public String showLoginPage() {
+    public String mostrarLoginForm(Model model) {
+        model.addAttribute("loginRequest", new LoginRequest()); // 👈 esto es clave
         return "login";
     }
-
     @PostMapping("/login")
     public String processLogin(@ModelAttribute LoginRequest loginRequest,
             HttpSession session,
             Model model) {
         try {
+            // 1. Enviar login al backend (auth)
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             HttpEntity<LoginRequest> entity = new HttpEntity<>(loginRequest, headers);
@@ -72,8 +73,45 @@ public class PresentacionController {
             );
 
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                session.setAttribute("JWT_TOKEN", response.getBody().getToken());
-                return "redirect:/Presentacion";
+                // 2. Guardar el token en sesión
+                String jwt = response.getBody().getToken();
+                session.setAttribute("JWT_TOKEN", jwt);
+
+                // 3. Obtener los datos del usuario
+                HttpHeaders userHeaders = new HttpHeaders();
+                userHeaders.setBearerAuth(jwt);
+                HttpEntity<?> userEntity = new HttpEntity<>(userHeaders);
+
+                // Usa el ID retornado desde /login
+                int idUsuario = response.getBody().getIdUsuario();
+
+                ResponseEntity<Result> userResponse = restTemplate.exchange(
+                        "http://localhost:8081/demoapi/Usuario?IdUsuario=" + idUsuario,
+                        HttpMethod.GET,
+                        userEntity,
+                        Result.class
+                );
+
+                if (userResponse.getStatusCode().is2xxSuccessful() && userResponse.getBody() != null) {
+                    session.setAttribute("USUARIO_LOGUEADO", userResponse.getBody().object);
+                }
+
+                // 4. Obtener todos los usuarios
+                ResponseEntity<Result> allUsersResponse = restTemplate.exchange(
+                        "http://localhost:8081/demoapi",
+                        HttpMethod.GET,
+                        userEntity,
+                        Result.class
+                );
+
+                if (allUsersResponse.getStatusCode().is2xxSuccessful()) {
+                    model.addAttribute("usuarioDireccion", allUsersResponse.getBody().objects);
+                }
+
+                UsuarioDireccion usuarioLog = (UsuarioDireccion) userResponse.getBody().object;
+                model.addAttribute("rolUsuario", usuarioLog.Usuario.Roll.getNombre());
+
+                return "Presentacion";
             } else {
                 model.addAttribute("error", "Credenciales inválidas");
                 return "login";
@@ -84,6 +122,7 @@ public class PresentacionController {
             return "login";
         }
     }
+
 
 //
 //    @GetMapping("UsuarioForm/{idAlumno}") // este prepara la vista de formualrio
