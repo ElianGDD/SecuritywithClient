@@ -2,6 +2,7 @@ package com.risosu.EDesalesProgramacionNCapasJunio3.Security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -13,27 +14,27 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration
 public class Security {
 
-//    @Autowired
-//    public JdbcTemplate JdbcTemplate;
-//    @Autowired
-//    private UserDetailsService customUserDetailsService;
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/Presentacion/Login").permitAll()
+                .requestMatchers(HttpMethod.GET, "/Presentacion/login").permitAll()
+                .requestMatchers(HttpMethod.POST, "/Presentacion/login").permitAll()
                 .requestMatchers("/Presentacion/CargaMasiva").hasAnyAuthority("Admin", "Programador")
                 .requestMatchers("/Presentacion").hasAnyAuthority("Admin", "Analista", "Programador")
-                .requestMatchers("/Presentacion/**").authenticated() 
-                .anyRequest().authenticated()
+                .requestMatchers("/Presentacion/**").authenticated()
+                .anyRequest().permitAll()
                 )
-                .formLogin(form -> form
-                .loginPage("/Presentacion/Login")
-                .defaultSuccessUrl("/Presentacion", true)
-                .failureUrl("/Presentacion/Login?error=true")
-                .permitAll()
+                .sessionManagement(session -> session
+                .maximumSessions(1)
                 )
-                .logout(logout -> logout.permitAll());
+                .logout(logout -> logout
+                .logoutUrl("/logout")
+                .logoutSuccessUrl("/Presentacion")
+                .invalidateHttpSession(true)
+                .deleteCookies("JSESSIONID")
+                );
 
         return http.build();
     }
@@ -42,31 +43,4 @@ public class Security {
     public PasswordEncoder passwordEncoder() {
         return PasswordEncoderFactories.createDelegatingPasswordEncoder();
     }
-
-//    @Bean
-//    public UserDetailsService userDetailsService(DataSource datasource) {
-//
-//
-//        return CustoUserManager;
-//    }
-
-//    @Bean
-//    public InMemoryUserDetailsManager inMemoryUserDetailsManager() {
-//        UserDetails programador = User.builder()
-//                .username("Elian")
-//                .password(passwordEncoder().encode("password1"))
-//                .authorities("Programador")
-//                .build();
-//        UserDetails admin = User.builder()
-//                .username("Kevin")
-//                .password(passwordEncoder().encode("password2"))
-//                .authorities("Admin")
-//                .build();
-//        UserDetails analista = User.builder()
-//                .username("mago1")
-//                .password(passwordEncoder().encode("password3"))
-//                .authorities("Analista")
-//                .build();
-//        return new InMemoryUserDetailsManager(programador, admin, analista);
-//    }
 }

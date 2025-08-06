@@ -1,57 +1,37 @@
 package com.risosu.EDesalesProgramacionNCapasJunio3.Controller;
 
-
-import com.risosu.EDesalesProgramacionNCapasJunio3.ML.Usuario;
+import com.risosu.EDesalesProgramacionNCapasJunio3.ML.AuthResponse;
+import com.risosu.EDesalesProgramacionNCapasJunio3.ML.LoginRequest;
 import com.risosu.EDesalesProgramacionNCapasJunio3.ML.UsuarioDireccion;
-import com.risosu.EDesalesProgramacionNCapasJunio3.ML.Colonia;
-import com.risosu.EDesalesProgramacionNCapasJunio3.ML.Direccion;
-import com.risosu.EDesalesProgramacionNCapasJunio3.ML.Pais;
 import com.risosu.EDesalesProgramacionNCapasJunio3.ML.Result;
-import com.risosu.EDesalesProgramacionNCapasJunio3.ML.ResultValidarDatos;
-import com.risosu.EDesalesProgramacionNCapasJunio3.ML.Roll;
 import jakarta.servlet.http.HttpSession;
-import jakarta.validation.Valid;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.Base64;
-import java.security.AlgorithmConstraints;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
+
 import java.util.List;
-import org.apache.commons.math3.analysis.function.Add;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.xssf.usermodel.XSSFSheet;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.client.RestTemplate;
 
 @Controller
 @RequestMapping("/Presentacion")
+@SessionAttributes("JWT_TOKEN")
 public class PresentacionController {
 
     @GetMapping
     public String Index(Model model) {
-     RestTemplate restTemplate = new RestTemplate();
+        RestTemplate restTemplate = new RestTemplate();
         ResponseEntity<Result<UsuarioDireccion>> response = restTemplate.exchange("http://localhost:8080/demoapi",
                 HttpMethod.GET,
                 HttpEntity.EMPTY,
@@ -63,11 +43,48 @@ public class PresentacionController {
 
         return "Presentacion";
     }
-    
-    @GetMapping("/Login")
-    public String GetLogin(){
-        return "Login";
+
+    @ModelAttribute("JWT_TOKEN")
+    public String jwtToken(HttpSession session) {
+        return (String) session.getAttribute("JWT_TOKEN");
     }
+
+    @GetMapping("/login")
+    public String showLoginPage() {
+        return "login";
+    }
+
+    @PostMapping("/login")
+    public String processLogin(@ModelAttribute LoginRequest loginRequest,
+            HttpSession session,
+            Model model) {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<LoginRequest> entity = new HttpEntity<>(loginRequest, headers);
+
+            RestTemplate restTemplate = new RestTemplate();
+            ResponseEntity<AuthResponse> response = restTemplate.exchange(
+                    "http://localhost:8081/demoapi/login",
+                    HttpMethod.POST,
+                    entity,
+                    AuthResponse.class
+            );
+
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                session.setAttribute("JWT_TOKEN", response.getBody().getToken());
+                return "redirect:/Presentacion";
+            } else {
+                model.addAttribute("error", "Credenciales inválidas");
+                return "login";
+            }
+
+        } catch (Exception e) {
+            model.addAttribute("error", "Error al autenticar: " + e.getMessage());
+            return "login";
+        }
+    }
+
 //
 //    @GetMapping("UsuarioForm/{idAlumno}") // este prepara la vista de formualrio
 //    public String Accion(Model model, @PathVariable int idAlumno) {
@@ -381,7 +398,6 @@ public class PresentacionController {
 //
 //        return "Presentacion";
 //    }
-
 //    @GetMapping("delete/direccion")
 //    public String DeleteDireccionByIdDireccion(@RequestParam int idDireccion) {
 //        Result result = iUsuarioJPADAOImplementation.DeleteDireccionByIdDireccion(idDireccion);
